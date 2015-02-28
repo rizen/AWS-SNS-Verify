@@ -90,7 +90,7 @@ sub verify {
 
 =head1 NAME
 
-AWS::SNS::Verify - Verifies authenicity of SNS messages.
+AWS::SNS::Verify - Verifies authenticity of SNS messages.
 
 =head1 SYNOPSIS
 
