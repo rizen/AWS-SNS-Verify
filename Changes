@@ -1,5 +1,8 @@
 Revision history for Perl module AWS::SNS::Verify
 
+0.0101 2015-03-01
+ - Fixed a typo. Thanks to yanick.
+
 0.0100 2015-02-20
  - Initial public release.
 
