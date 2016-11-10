@@ -44,4 +44,15 @@ is(
 
 
 
+my $no_validate_sns = AWS::SNS::Verify->new(body => '', validate_signing_cert_url => 0);
+my $test_server_url = "http://my.local.test.server/cert.pem";
+is(
+    $no_validate_sns->valid_cert_url($test_server_url),
+    $test_server_url,
+    "Accept any URL if no validation",
+);
+
+
+
+
 done_testing();

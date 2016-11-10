@@ -43,6 +43,12 @@ has certificate => (
     }
 );
 
+has validate_signing_cert_url => (
+    is      => 'ro',
+    lazy    => 1,
+    default => 1,
+);
+
 sub fetch_certificate {
     my $self = shift;
     my $url = $self->valid_cert_url($self->message->{SigningCertURL});
@@ -95,6 +101,8 @@ sub valid_cert_url {
     my $self = shift;
     my ($url_string) = @_;
     $url_string ||= '';
+
+    return $url_string unless $self->validate_signing_cert_url;
 
     my $url = URI::URL->new($url_string);
     unless ( $url->can('host') ) {
@@ -167,6 +175,12 @@ Required. JSON string posted by AWS SNS. Looks like:
 By default AWS::SNS::Verify will fetch the certificate string by issuing an HTTP GET request to C<SigningCertURL>. The SigningCertURL in the message must be a AWS SNS endpoint.
 
 If you wish to use a cached version, then pass it in.
+
+=item validate_signing_cert_url (default: true)
+
+If you're using a fake SNS server in your local test environment, the SigningCertURL won't be an AWS endpoint. If so, set validate_signing_cert_url to 0.
+
+Don't ever do this in any kind of Production environment.
 
 =back
 
