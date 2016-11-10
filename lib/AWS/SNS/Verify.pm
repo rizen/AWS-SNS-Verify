@@ -9,6 +9,7 @@ use Moo;
 use Ouch;
 use Crypt::OpenSSL::RSA;
 use Crypt::OpenSSL::X509;
+use URI::URL;
 
 has body => (
     is          => 'ro',
@@ -44,7 +45,8 @@ has certificate => (
 
 sub fetch_certificate {
     my $self = shift;
-    my $response = HTTP::Tiny->new->get($self->message->{SigningCertURL});
+    my $url = $self->valid_cert_url($self->message->{SigningCertURL});
+    my $response = HTTP::Tiny->new->get($url);
     if ($response->{success}) {
         return $response->{content};
     }
@@ -85,6 +87,32 @@ sub verify {
         ouch 'Bad SNS Signature', 'Could not verify the SES message from its signature.', $self;
     }
     return 1;
+}
+
+# See also:
+# https://github.com/aws/aws-php-sns-message-validator/blob/master/src/MessageValidator.php#L22
+sub valid_cert_url {
+    my $self = shift;
+    my ($url_string) = @_;
+    $url_string ||= '';
+
+    my $url = URI::URL->new($url_string);
+    unless ( $url->can('host') ) {
+        ouch 'Bad SigningCertURL', "The SigningCertURL ($url_string) isn't a valid URL", $self;
+    }
+    my $host = $url->host;
+
+    # Match all regional SNS endpoints, e.g.
+    # sns.<region>.amazonaws.com        (AWS)
+    # sns.us-gov-west-1.amazonaws.com   (AWS GovCloud)
+    # sns.cn-north-1.amazonaws.com.cn   (AWS China)
+    my $dot = qr/\./;
+    my $region = qr/[a-zA-Z0-9-]+/;
+    unless ($host =~ /^ sns $dot $region $dot amazonaws $dot com(\.cn)? $/x) {
+        ouch 'Bad SigningCertURL', "The SigningCertURL ($url_string) isn't an Amazon endpoint", $self;
+    }
+
+    return $url_string;
 }
 
 
