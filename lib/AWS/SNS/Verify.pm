@@ -172,7 +172,7 @@ If you wish to use a cached version, then pass it in.
 
 =head2 verify
 
-Returns a 1 on success, or an L<Ouch> on a failure.
+Returns a 1 on success, or die with an L<Ouch> on a failure.
 
 =head2 message
 
