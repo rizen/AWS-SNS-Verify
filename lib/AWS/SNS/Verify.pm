@@ -164,7 +164,9 @@ Required. JSON string posted by AWS SNS. Looks like:
 
 =item certificate_string
 
-By default AWS::SNS::Verify will fetch the certificate string by issuing an HTTP GET request to C<SigningCertURL>. If you wish to use a cached version, then pass it in.
+By default AWS::SNS::Verify will fetch the certificate string by issuing an HTTP GET request to C<SigningCertURL>. The SigningCertURL in the message must be a AWS SNS endpoint.
+
+If you wish to use a cached version, then pass it in.
 
 =back
 
