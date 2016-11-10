@@ -1,8 +1,14 @@
-use Test::More;
 use strict;
+use warnings;
+use Test::More;
+use Test::Exception;
+
 use lib '../lib';
+
 use_ok('AWS::SNS::Verify');
 
+
+note "Happy path";
 
 my $cert_string = <<END;
 -----BEGIN CERTIFICATE-----
@@ -64,5 +70,49 @@ isa_ok($sns, 'AWS::SNS::Verify');
 #is($sns->certificate_string, $sns->fetch_certificate, 'loading the certificate ok');
 
 ok $sns->verify, 'does message check out';
+
+
+
+note "Tampered body doesn't validate";
+
+my $tampered_body = <<END;
+{
+    "Type" : "Notification",
+    "MessageId" : "a890c547-5d98-55e2-971d-8826fff56413",
+    "TopicArn" : "arn:aws:sns:us-east-1:041977924901:foo",
+    "Subject" : "test subject",
+    "Message" : "TAMPERED MESSAGE",
+    "Timestamp" : "2015-02-20T20:59:25.401Z",
+    "SignatureVersion" : "1",
+    "Signature" : "kzi3JBQz64uFAXG9ZuAwPI2gYW5tT7OF83oeHb8v0/XRPsy0keq2NHTCpQVRxCgPOJ/QUB2Yl/L29/W4hiHMo9+Ns0hrqyasgUfjq+XkVR1WDuYLtNaEA1vLnA0H9usSh3eVVlLhpYzoT4GUoGgstRVvFceW2QVF9EYUQyromlcbOVtVpKCEINAvGEEKJNGTXQQUkPUka3YMhHitgQg1WlFBmf+oweSYUEj8+RoguWsn6vluxD0VtIOGOml5jlUecfhDqnetF5pUVYMqCHPfHn6RBguiW+XD6XWsdKKxkjqo90a65Nlb72gPSRw6+sIEIgf4J39WFZK+FCpeSm0qAg==",
+    "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-d6d679a1d18e95c2f9ffcf11f4f9e198.pem",
+    "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:041977924901:foo:20b2d060-2a32-4506-9cb0-24b8b9e605e1",
+    "MessageAttributes" : {
+        "AWS.SNS.MOBILE.MPNS.Type" : {"Type":"String","Value":"token"},
+        "AWS.SNS.MOBILE.WNS.Type" : {"Type":"String","Value":"wns/badge"},
+        "AWS.SNS.MOBILE.MPNS.NotificationClass" : {"Type":"String","Value":"realtime"}
+    }
+}
+END
+
+my $tampered_body_sns = AWS::SNS::Verify->new(body => $tampered_body, certificate_string => $cert_string);
+throws_ok(
+    sub { $tampered_body_sns->verify },
+    qr/Could not verify the SES message/,
+    "Tampered with body doesn't valiate",
+);
+
+
+
+note "Invalid cert doesn't validate";
+
+my $invalid_cert_sns = AWS::SNS::Verify->new(body => $body, certificate_string => "Nopes");
+throws_ok(
+    sub { $invalid_cert_sns->verify },
+    qr/X509/,
+    "Invalid cert doesn't valiate",
+);
+
+
 
 done_testing();
