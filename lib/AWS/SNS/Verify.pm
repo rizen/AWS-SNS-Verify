@@ -9,6 +9,7 @@ use Moo;
 use Ouch;
 use Crypt::OpenSSL::RSA;
 use Crypt::OpenSSL::X509;
+use URI::URL;
 
 has body => (
     is          => 'ro',
@@ -42,9 +43,16 @@ has certificate => (
     }
 );
 
+has validate_signing_cert_url => (
+    is      => 'ro',
+    lazy    => 1,
+    default => 1,
+);
+
 sub fetch_certificate {
     my $self = shift;
-    my $response = HTTP::Tiny->new->get($self->message->{SigningCertURL});
+    my $url = $self->valid_cert_url($self->message->{SigningCertURL});
+    my $response = HTTP::Tiny->new->get($url);
     if ($response->{success}) {
         return $response->{content};
     }
@@ -85,6 +93,34 @@ sub verify {
         ouch 'Bad SNS Signature', 'Could not verify the SES message from its signature.', $self;
     }
     return 1;
+}
+
+# See also:
+# https://github.com/aws/aws-php-sns-message-validator/blob/master/src/MessageValidator.php#L22
+sub valid_cert_url {
+    my $self = shift;
+    my ($url_string) = @_;
+    $url_string ||= '';
+
+    return $url_string unless $self->validate_signing_cert_url;
+
+    my $url = URI::URL->new($url_string);
+    unless ( $url->can('host') ) {
+        ouch 'Bad SigningCertURL', "The SigningCertURL ($url_string) isn't a valid URL", $self;
+    }
+    my $host = $url->host;
+
+    # Match all regional SNS endpoints, e.g.
+    # sns.<region>.amazonaws.com        (AWS)
+    # sns.us-gov-west-1.amazonaws.com   (AWS GovCloud)
+    # sns.cn-north-1.amazonaws.com.cn   (AWS China)
+    my $dot = qr/\./;
+    my $region = qr/[a-zA-Z0-9-]+/;
+    unless ($host =~ /^ sns $dot $region $dot amazonaws $dot com(\.cn)? $/x) {
+        ouch 'Bad SigningCertURL', "The SigningCertURL ($url_string) isn't an Amazon endpoint", $self;
+    }
+
+    return $url_string;
 }
 
 
@@ -136,13 +172,21 @@ Required. JSON string posted by AWS SNS. Looks like:
 
 =item certificate_string
 
-By default AWS::SNS::Verify will fetch the certificate string by issuing an HTTP GET request to C<SigningCertURL>. If you wish to use a cached version, then pass it in.
+By default AWS::SNS::Verify will fetch the certificate string by issuing an HTTP GET request to C<SigningCertURL>. The SigningCertURL in the message must be a AWS SNS endpoint.
+
+If you wish to use a cached version, then pass it in.
+
+=item validate_signing_cert_url (default: true)
+
+If you're using a fake SNS server in your local test environment, the SigningCertURL won't be an AWS endpoint. If so, set validate_signing_cert_url to 0.
+
+Don't ever do this in any kind of Production environment.
 
 =back
 
 =head2 verify
 
-Returns a 1 on success, or an L<Ouch> on a failure.
+Returns a 1 on success, or die with an L<Ouch> on a failure.
 
 =head2 message
 
