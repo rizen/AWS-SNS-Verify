@@ -197,6 +197,23 @@ Returns a hash reference of the decoded L<body> that was passed in to the constr
 If you want to cache the certificate in a local cache, then get it using this method.
 
 
+=head2 decode_signature
+
+You should never need to call this, it decodes the base64 signature.
+
+=head2 fetch_certificate
+
+You should never need to call this, it fetches the signing certificate.
+
+
+=head2 generate_signature_string
+
+You should never need to call this, it generates the signature string required to verify the request.
+
+=head2 valid_cert_url
+
+You should never need to call this, it checks the validity of the certificate signing URL per L<https://github.com/aws/aws-php-sns-message-validator/blob/master/src/MessageValidator.php#L22>
+
 =head1 REQUIREMENTS
 
 Requires Perl 5.12 or higher and these modules:
