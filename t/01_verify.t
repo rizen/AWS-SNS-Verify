@@ -109,7 +109,7 @@ note "Invalid cert doesn't validate";
 my $invalid_cert_sns = AWS::SNS::Verify->new(body => $body, certificate_string => "Nopes");
 throws_ok(
     sub { $invalid_cert_sns->verify },
-    qr/X509/,
+    qr/FATAL: invalid or unsupported RSA key format/,
     "Invalid cert doesn't valiate",
 );
 
