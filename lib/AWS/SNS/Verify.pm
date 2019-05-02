@@ -9,6 +9,7 @@ use Moo;
 use Ouch;
 use Crypt::PK::RSA;
 use URI::URL;
+use Data::Structure::Util;
 
 has body => (
     is          => 'ro',
@@ -122,6 +123,10 @@ sub valid_cert_url {
     return $url_string;
 }
 
+sub TO_JSON {
+    my $self = shift;
+    return unbless($self);
+}
 
 =head1 NAME
 
