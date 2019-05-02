@@ -89,7 +89,7 @@ sub verify {
     my $self = shift;
     my $pk = $self->certificate;
     unless ($pk->verify_message($self->decode_signature, $self->generate_signature_string, 'SHA1', 'v1.5')) {
-        ouch 'Bad SNS Signature', 'Could not verify the SES message from its signature.', $self;
+        ouch 'Bad SNS Signature', 'Could not verify the SNS message from its signature.', $self;
     }
     return 1;
 }

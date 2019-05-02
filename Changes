@@ -1,5 +1,8 @@
 Revision history for Perl module AWS::SNS::Verify
 
+0.0104 2019-05-01
+ * Fix issue #5
+
 0.0104 2019-01-21
  * Remove deps to Crypt::OpenSSL::RSA and Crypt::OpenSSL::X509 (Takumi Akiyama)
 
