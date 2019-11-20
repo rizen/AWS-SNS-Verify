@@ -9,6 +9,7 @@ use Moo;
 use Ouch;
 use Crypt::PK::RSA;
 use URI::URL;
+use Data::Structure::Util;
 
 has body => (
     is          => 'ro',
@@ -89,7 +90,7 @@ sub verify {
     my $self = shift;
     my $pk = $self->certificate;
     unless ($pk->verify_message($self->decode_signature, $self->generate_signature_string, 'SHA1', 'v1.5')) {
-        ouch 'Bad SNS Signature', 'Could not verify the SES message from its signature.', $self;
+        ouch 'Bad SNS Signature', 'Could not verify the SNS message from its signature.', $self;
     }
     return 1;
 }
@@ -122,6 +123,10 @@ sub valid_cert_url {
     return $url_string;
 }
 
+sub TO_JSON {
+    my $self = shift;
+    return unbless($self);
+}
 
 =head1 NAME
 
